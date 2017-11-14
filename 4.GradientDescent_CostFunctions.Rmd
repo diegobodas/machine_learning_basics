@@ -1,0 +1,383 @@
+---
+title: "Cost functions and gradient descent"
+author: "Diego J. Bodas Sagi"
+date: "6 October 2017"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    number_sections: true
+---
+
+![](images/CarlSagan.png)
+
+# Basic R Markdown
+
+Install the rmarkdown package
+
+This is a latex equation, $E = mc^{2}$
+
+This is a inline code `print("this is an inline code")`
+
+Set echo = TRUE if you want to include source code in the output
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For Spanish beginners see: https://markdown.es/sintaxis-markdown/
+
+R Markdown Cheat Sheet: https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf 
+
+Other good one: https://guides.github.com/pdfs/markdown-cheatsheet-online.pdf 
+
+Latex symbols: https://en.wikibooks.org/wiki/LaTeX/Mathematics 
+
+# Binary classification
+
+Binary or binomial classification is the task of classifying the elements of a given set into two groups (predicting which group each one belongs to) (@binaryClassification).
+
+An example:
+
+![](http://mlpy.sourceforge.net/docs/3.4/_images/lda_binary.png)
+
+# Logistic Regression
+
+In statistics, logistic regression, or logit regression, or logit model[1] is a regression model where the dependent variable (DV) is categorical (@logisticRegression).
+
+Find the maths here:
+
+Given $x$ and $y$ find $\hat{y}$ such as $\hat{y} =  P(y = 1 | x)$ where $0 \leq \hat{y} \leq 1$
+
+We need to find $w \in \mathbb{R}^n$ and $b \in \mathbb{R}$ 
+where $\hat{y} = \sigma(w^Tx + b) = \sigma(z) \approx y$ and
+$\sigma(z) = \frac{1}{1 + e^{-z}}$
+
+
+See the graph in R
+
+```{r}
+Sigmoid <- function(x) { 
+  1 / (1 + exp(-x))
+}
+
+# feed with data
+x <- seq(-5, 5, 0.01)
+
+# and plot
+plot(x, Sigmoid(x), col='blue', ylim = c(-.2, 1))
+abline(h = 0, v = 0, col = "gray60")
+```
+
+The idea is the following:
+
+If *z* is very large $\sigma(z) \approx 1$, but if z is a large negative number $\sigma(z) \approx 0$
+
+We use the Sigmoid function because it's a **differentiable function** (a piecewise linear function, given 0 value if x < 0.5 and 1 in another case, is not a differentiable one).
+
+# Loss (error) function
+
+As $\hat{y} \approx y$, we have a loss or error function:
+
+The logistic regression cost function is the following:
+
+$\ell(y, \hat{y}) = -(ylog(\hat{y}) + (y +1)log(1 - \hat{y})$
+
+Why this loss function?
+
+Because if $y = 0$ we want $\hat{y}$ small, if $y = 1$ we want a large value for $\hat{y}$.
+In another case, we want to penalize the result.
+
+# Cost function
+
+The cost function aggregates the loss function result for every $(x_{i}, y_{i})$. Given *n*, the sample size, the cost function is:
+<!-- Comment: 1/n to obtain error average -->
+$\jmath(w, b) = \frac{1}{n}\sum_{1}^{n}\ell(y^{i} \hat{y}^{i}) = -\frac{1}{n}\sum_{1}^{n}((y^{i}log(\hat{y}^{i}) + (y^{i} +1)log(1 - \hat{y}^{i}))$
+
+Remember: $\hat{y} = h_{\theta} = \sigma(w^Tx + b)$ 
+
+```{r}
+# Ref: https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/
+# Cost Function
+# 
+CostFunction <- function(parameters, X, Y) {
+  n <- nrow(X)
+  # function to apply (%*% Matrix multiplication)
+  g <- Sigmoid(X %*% parameters)
+  J <- (1/n) * sum((-Y * log(g)) - ((1 - Y) * log(1 - g)))
+  return(J)
+}
+```
+
+So, our mission is to find *w*, and *b*, such that minimizes $\jmath(w, b)$
+
+To find maximums and minimums we use derivatives. And here the gradient descent appears (@MachineLearningFAQ). 
+
+![](https://sebastianraschka.com/images/faq/closed-form-vs-gd/ball.png)
+
+And, why derivatives?
+
+![](https://sebastianraschka.com/images/faq/closed-form-vs-gd/simple_regression.png)
+
+Use the **chain rule** to obtain the derivatives. 
+
+The learning rate is paramount. If you set a very high learning rate the algorithm might not converge. On the contrary, with a very low learning rate the learning process could be slow (@learningRate).
+
+![](images/learningRate.png)
+
+Due to this kind of *choices*, experience is a high valueble assset (and Data Science become an **Art** in something aspects)
+
+The algorithm is the following (\alpha represents the **learning rate**):
+
+*Repeat until convergence*:
+
+$w = w - \alpha\frac{\partial\jmath(w, b)}{\partial w}$
+  
+$b = b - \alpha\frac{\partial\jmath(w, b)}{\partial b}$
+    
+*end algorithm*
+
+Then, remember we want to find W and b that **minimizes the cost function** not the $\hat{y}$ function. 
+
+\[ \frac{\partial\jmath(w, b)}{\partial \theta_j} = \frac{1}{n} \sum\limits_{i=1}^n (h_{\theta}(x^{(i)}) - y^{(i)}) x_j^{(i)} \] (@derivateCostFunction) 
+
+where $h_{\theta} = \sigma$
+
+As $\frac{1}{n}$ is a constant, $\alpha\frac{1}{n}$ is constant too.  
+
+Other way to see this, is the following. Consider the algorithm as:
+
+*Repeat until convergence*:
+
+$w = w - \alpha\frac{\partial\ell(y, \hat{y})}{\partial w}$
+  
+$b = b - \alpha\frac{\partial\ell(y, \hat{y})}{\partial b}$
+    
+*end algorithm*
+
+Then, the $\frac{1}{n}$ constant dissapear. 
+
+-----
+
+NOTE (trick for the derivatives, using the chain rule): 
+
+Let $a$ be the sigmoid functions, such that:
+
+$a = \sigma(z)$, $-e^{-x} = 1 - (1 + e^{-x}) = 1 - \frac{1}{a} = \frac{a-1}{a}$
+
+----- 
+
+An algorithm that always terminates with a desired solution in a finite number of iterations is a **finite algorithm**.
+
+An **iterative algorithm** is said to converge when as the iterations proceed the output gets closer and closer to a specific value. Convergence to a local minimum can only be guaranteed when the function function is convex.
+
+![](https://i.stack.imgur.com/GNBZ4.png)
+
+We can set up a stopping criterion, such as a finite number of iterations or a required improvement in the cost function. 
+  
+**Iterative algorithms are the core of Machine Learning**, and for this reason, **parallel computing** is so important in Machine Learning and Data Science.
+
+# Example 
+
+Suppose that you are an administrator of a university and you want to know the chance of admission of each applicant based on their two exams. You have historical data from previous applicants which can be used as the training data for logistic regression.  Your task is to build a classification model that estimates each applicant’s probability of admission in university (Source:coursera machine learning class and @rbloggers).
+
+Now, we have understood classification problem that we are going to address. Let us understand the data. In data we have records of previous applicants’ two exams score and label whether applicant got admission or not (1 - if got admission 0 - otherwise).
+
+Analyze your data
+
+```{r}
+#Load data
+data <- read.csv("data/4_1_data.csv")
+
+#Create plot
+plot(data$score.1, data$score.2, col = as.factor(data$label), xlab = "Score-1", ylab = "Score-2")
+```
+
+In this case we have two predictor variables (two exams’ scores) and label as response variable. The equation is the following:
+
+$\hat{y} = \sigma(w_1x_1 + w_2*x_2 + b)$ 
+
+Then, remember we want to find W and b that **minimizes the cost function** not the $\hat{y}$ function. 
+
+<!-- \[ \frac{\partial}{\partial \theta_j} = \frac{1}{n} \sum\limits_{i=1}^n (h_{\theta}(x^{(i)}) - y^{(i)}) x_j^{(i)} \] (@derivateCostFunction) -->
+
+Let us set predictor and response variables.
+
+```{r}
+#Predictor variables
+X <- as.matrix(data[, c(1,2)])
+
+#Add ones to X in the first column (matrix multiplication x b)
+X <- cbind(rep(1, nrow(X)), X)
+
+#Response variable
+Y <- as.matrix(data$label)
+```
+
+
+```{r}
+#Intial parameters
+initial_parameters <- rep(0, ncol(X))
+
+#Cost at inital parameters
+CostFunction(initial_parameters, X, Y)
+```
+
+With each step of gradient descent, parameters come closer to the optimal values that will achieve the lowest cost. To do this we will set (i.e.) the iteration parameter to 1200
+
+```{r}
+# We want to minimize the cost function. Then derivate this funcion
+TestGradientDescent <- function(iterations = 1200, X, Y) {
+  
+  # Initialize (b, W)
+  parameters <- rep(0, ncol(X))
+  # Check evolution
+  print(paste("Initial Cost Function value: ", 
+              convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+  
+  # updating (b, W) using gradient update
+  
+  # Derive theta using gradient descent using optim function
+  # Look for information about the "optim" function (there are other options)
+  parameters_optimization <- optim(par = parameters, fn = CostFunction, X = X, Y = Y, 
+                                   control = list(maxit = iterations))
+  #set parameters
+  parameters <- parameters_optimization$par
+  
+  # Check evolution
+  print(paste("Final Cost Function value: ", 
+              convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+
+ return(parameters) 
+}
+
+# How to use
+parameters <- TestGradientDescent(X = X, Y = Y)
+# probability of admission for student (1 = b, for the calculos)
+new_student <- c(1,25,78)
+print("Probability of admission for student:")
+print(prob_new_student <- Sigmoid(t(new_student) %*% parameters))
+```
+Is he out? :-(
+
+## Plus lesson - Unit test - Testing our code
+
+Unit tests are small functions that test your code and help you make sure everything is alright. To do this in R, the *testthat* package can be used as follows:
+
+```{r, echo = FALSE}
+# Install if not installed
+if (!require("testthat")) install.packages("testthat")
+# load
+library(testthat)
+```
+
+Now, we can check the code for the *TestGradientDescent* function.
+
+```{r}
+test_that("Test TestGradientDescent",{
+  parameters <- TestGradientDescent(X = X, Y = Y)
+  # probability of admission for student (1 = b, for the calculos)
+  new_student <- c(1,25,78)
+  prob_new_student <- Sigmoid(t(new_student) %*% parameters)
+  print(prob_new_student)
+  expect_equal(as.numeric(round(prob_new_student, digits = 4)), 0.0135)
+  # Fail, test
+  # expect_equal(as.numeric(round(prob_new_student, digits = 4)), 0.0130)
+})
+```
+
+
+# Assignment
+
+1. Test the *TestGradientDescent* function with the training set (*4_1_data.csv*). Obtain the confusion matrix. 
+
+2. Obtain a graph representing how the cost function evolves depending of the number of iterations.
+
+3. Explore other options using the *optim* function (see the methods section of the documentation). Explore other ways in R for estimating the Gradient Descent. 
+
+4. Explain why is not a trivial task to calculate the Gradient Descent. What happens if we have a very high dimensional problem?
+
+5. Optional (+0.5 - 1 points in final grade). 
+
+    + Implement the algorithm step by step using the update rule and an iterative algorithm, do not use the *optim* function.
+    + Research about regularization in logistic regression and explain it. 
+
+Explain your work results using the **RMarkdown format**. 
+
+# References
+
+---
+references:
+- id: template
+  title: Binary classification
+  author:
+  - family: Fenner
+    given: Martin
+  container-title: Nature Materials
+  volume: 11
+  URL: 'http://dx.doi.org/10.1038/nmat3283'
+  DOI: 10.1038/nmat3283
+  issue: 4
+  publisher: Nature Publishing Group
+  page: 261-263
+  type: article-journal
+  issued:
+    year: 2012
+    month: 3
+
+- id: binaryClassification
+  title: Binary classification
+  author:
+  - family: Wikipedia - Binary Classification
+  URL: 'https://en.wikipedia.org/wiki/Binary_classification'
+  issued:
+    year: 2017
+
+- id: logisticRegression
+  title: Logistic Regression
+  author:
+  - family: Wikipedia - Logistic Regression
+  URL: 'https://en.wikipedia.org/wiki/Logistic_regression'
+  issued:
+    year: 2017
+    
+- id: MachineLearningFAQ
+  title: Machine Learning FAQ
+  author:
+  - family: Raschka
+    given: Martin
+  URL: 'https://sebastianraschka.com/faq/docs/closed-form-vs-gd.html'
+  issued:
+    year: 2017
+
+- id: learningRate
+  title: Logistic Regression and Gradient Descent
+  author:
+  - family: Magdon-Ismail
+    given: M.
+  URL: 'http://www.cs.rpi.edu/~magdon/courses/LFD-Slides/SlidesLect09.pdf'
+  issued:
+    year: 2017
+
+- id: rbloggers
+  title: Logistic regression with R
+  author:
+  - family: Gondaliya
+    given: Amar
+  URL: 'https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/'
+  issued:
+    year: 2013
+    
+- id: derivateCostFunction
+  title: Derivate Cost Function for Logistic Regression
+  author:
+  - family: Fok
+    given: Sam
+  URL: 'http://sambfok.blogspot.com.es/2012/08/partial-derivative-logistic-regression.html'
+  issued:
+    year: 2012
+---  
+Some ideas from (recommended course)
+https://www.coursera.org/specializations/deep-learning

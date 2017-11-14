@@ -1,0 +1,215 @@
+---
+title: "Naive Bayes Classifier"
+author: "Diego J. Bodas Sagi"
+date: "15 October 2017"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    number_sections: true
+---
+
+# Introduction
+
+In machine learning, **Naive Bayes Classifiers** are a family of simple probabilistic classifiers based on applying **Bayes' theorem** with strong (*naive*) independence assumptions between the features. Naive Bayes classifiers are highly scalable, requiring a number of parameters linear in the number of variables (features/predictors) in a learning problem (@naiveBayesClassifier). 
+
+Independent events are those which, upon occurrence, do not affect the probability of another event occurring. An example would be a child in Madrid scoring a goal at school and me eating pasta at the same day. Dependent events are those which, upon occurrence, affect the probability of another event occurring. An example would be getting drunk one night and suffering headaches the following day. The more you drink the greater your chance of suffering a headache the following day. When two or more events are mutually exclusive, they cannot occur simultaneously. The probility is zero. I.e., It is imposible to be on holidays in Cantabria and in Mexico at the same time. These two outcomes are mutually exclusive.
+
+The Naive Bayes Classifier are based on the famous Naive Bayes’ Theorem:
+
+$P(A|B) = \frac{P(A \cap B)}{P(B)} = \frac{P(A)P(B|A)}{P(B)}$
+
+To understand this, consider A as outcome and B and evidence. It is with this formula that the Naive Bayes classifier calculates conditional probabilities for a class outcome given prior information or evidence (our attributes in this case). The reason it is termed “naive” is because we assume independence between attributes when in reality they may be dependent in some way.
+
+# Probabilistic model
+
+When we have a vector, we have to use the chain rule and use some maths:
+
+$P(C_{k},x_{1},\dots ,x_{n}) =P(x_{1}\mid x_{2},\dots ,x_{n},C_{k})P(x_{2},\dots ,x_{n},C_{k})\\ =P(x_{1}\mid x_{2},\dots ,x_{n},C_{k})P(x_{2}\mid x_{3},\dots ,x_{n},C_{k})P(x_{3},\dots ,x_{n},C_{k})\\ =\dots \\ =P(x_{1}\mid x_{2},\dots ,x_{n},C_{k})P(x_{2}\mid x_{3},\dots ,x_{n},C_{k})\dots P(x_{n-1}\mid x_{n},C_{k})P(x_{n}\mid C_{k})P(C_{k})$
+
+# Hands-on
+
+Let's play with Naive Bayes Classification step by step example (getting our hands dirty).
+
+Get the data
+
+```{r}
+#---------- load library ----------
+if("mlbench" %in% rownames(installed.packages()) == FALSE) {install.packages("mlbench", dependencies = TRUE)}
+library('mlbench')
+
+# load data
+data(BostonHousing2)
+
+# info about the data
+str(BostonHousing2)
+summary(BostonHousing2)
+```
+
+The dataframe BostonHousing contains the original data by @harrisonRubinfeld, the dataframe BostonHousing2 includes additional spatial information. Get more information about this dataset in @mlbench. The target variable is *medv*, representing the median value of owner-occupied homes in USD 1000's. 
+
+We categorize the age for training purposes
+
+```{r}
+# Using cut
+BostonHousing2$age_range <- cut(BostonHousing2$age, breaks = c(-Inf, 20, 30, 40, 60, Inf), 
+                       labels = c(0, 1, 2, 3, 4), 
+                       right = FALSE)
+BostonHousing2$age <- NULL
+```
+
+For a simple example, we transform the *medv* variable into a simpler one meaning under o above the mean. 
+
+```{r}
+BostonHousing2$homes_range <- as.factor(ifelse(BostonHousing2$medv < 
+                                                 ((max(BostonHousing2$medv) - min(BostonHousing2$medv))/2), 0, 1))
+# delete medv variable
+BostonHousing2$medv <- NULL
+```
+
+
+Examine the new variable
+
+```{r}
+plot(BostonHousing2$homes_range)
+title(main = "Home range", xlab = "Home Range", ylab = "frequency")
+#by age
+plot(BostonHousing2[BostonHousing2$age_range == 0, ncol(BostonHousing2)])
+title(main = "Home Range for under 20", xlab = "Home Range", ylab = "frequency")
+
+```
+
+Do not forget the quality control
+
+```{r}
+ages_na <- which(is.na(BostonHousing2$age_range) == TRUE)
+homes_na <- which(is.na(BostonHousing2$homes_range) == TRUE)
+# no NAs in this case
+```
+
+We have already explired the dataset. Now, compute the conditional probability of $homeRange = 0$ when $ageRange = 4 (senior)$
+
+$P(homeRange = 0 | ageRange = 4) = \frac{P(homeRange = 0 \cap ageRange = 4)}{P(ageRange = 4)}$
+
+```{r}
+# Exercise: 
+# Compute: P(homeRange = 0 | ageRange = 4)
+```
+
+When we have to take into account all the variables the maths get complex. Luckily, the *e1071* R package is available to help us. But first, prepare the test and training sets.
+
+```{r}
+# divide into test and training sets
+# create new col "train"" and assign 1 or 0 in 80/20 proportion via random uniform dist
+BostonHousing2[, "train"] <- ifelse(runif(nrow(BostonHousing2)) < 0.80, 1, 0)
+# get col number of train / test indicator column (needed later)
+trainColNum <- grep("train", names(BostonHousing2))
+# separate training and test sets and remove training column before modeling
+trainBostonHousing2 <-BostonHousing2[BostonHousing2$train == 1,-trainColNum]
+testBostonHousing2 <- BostonHousing2[BostonHousing2$train == 0,-trainColNum]
+```
+
+Now, do the maths using the *e1071* package
+
+```{r}
+if("e1071" %in% rownames(installed.packages()) == FALSE) {install.packages("e1071", dependencies = TRUE)}
+library('e1071')
+
+naive_bayes_model <- naiveBayes(homes_range ~., data = trainBostonHousing2)
+naive_bayes_model
+summary(naive_bayes_model)
+str(naive_bayes_model)
+```
+
+Evaluate the model
+
+```{r}
+naive_bayes_test_predict <- predict(naive_bayes_model, testBostonHousing2[, -ncol(testBostonHousing2)])
+#confusion matrix
+table(pred = naive_bayes_test_predict, true = testBostonHousing2$homes_range)
+```
+
+Correct predictions
+
+```{r}
+#fraction of correct predictions
+mean(naive_bayes_test_predict == testBostonHousing2$homes_range)
+```
+
+Bad or good result?
+
+# Assignment
+
+1. Encapsulate the code creating **functions**
+2. Test more executions (remember we are using a random function to create the training and test set)
+3. Test other training fractions (0.6, 0.7, 0.8, 0.9)
+4. Try out for yourself, create new ranges, convert formats to factor... How to improve the results? A tournament is open
+5. Try this technique with the dataset from @kaggle challenge
+
+Use the RMarkdown format
+
+# References
+
+---
+references:
+- id: template
+  title: Binary classification
+  author:
+  - family: Fenner
+    given: Martin
+  container-title: Nature Materials
+  volume: 11
+  URL: 'http://dx.doi.org/10.1038/nmat3283'
+  DOI: 10.1038/nmat3283
+  issue: 4
+  publisher: Nature Publishing Group
+  page: 261-263
+  type: article-journal
+  issued:
+    year: 2012
+    month: 3
+    
+- id: naiveBayesClassifier
+  title: Naive Bayes Classifier
+  author:
+  - family: Wikipedia - Naive Bayes Classifier
+  URL: 'https://en.wikipedia.org/wiki/Naive_Bayes_classifier'
+  issued:
+    year: 2017
+
+- id: mlbench
+  title: Package 'mlbench'
+  author:
+  - family: Leisch
+    given: Friedrich
+  - family: Dimitriadou
+    given: Evgenia
+  URL: 'https://cran.r-project.org/web/packages/mlbench/mlbench.pdf'
+  issued:
+    year: 2015
+
+- id: harrisonRubinfeld
+  title: Hedonic prices and the demand for clean air
+  author:
+  - family: Harrison
+    given: D.
+  - family: Rubinfeld
+    given: D.L.
+  container-title: Journal of Environmental Economics and Management
+  volume: 5
+  publisher: Elsevier
+  page: 81–102
+  type: article-journal
+  issued:
+    year: 1978
+
+- id: kaggle
+  title: Give Me Some Credit
+  author:
+  - family: Kaggle 
+  URL: 'https://www.kaggle.com/c/GiveMeSomeCredit'
+  issued:
+    year: 2017
+---
