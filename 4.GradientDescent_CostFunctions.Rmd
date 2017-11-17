@@ -81,7 +81,7 @@ As $\hat{y} \approx y$, we have a loss or error function:
 
 The logistic regression cost function is the following:
 
-$\ell(y, \hat{y}) = -(ylog(\hat{y}) + (y +1)log(1 - \hat{y})$
+$\ell(y, \hat{y}) = -(ylog(\hat{y}) + (1 - y)log(1 - \hat{y})$
 
 Why this loss function?
 
