@@ -75,8 +75,6 @@ The idea is the following:
 
 If *z* is very large $\sigma(z) \approx 1$, but if z is a large negative number $\sigma(z) \approx 0$
 
-We use the Sigmoid function because it's a **differentiable function** (a piecewise linear function, given 0 value if x < 0.5 and 1 in another case, is not a differentiable one).
-
 # Loss (error) function
 
 As $\hat{y} \approx y$, we have a loss or error function:
