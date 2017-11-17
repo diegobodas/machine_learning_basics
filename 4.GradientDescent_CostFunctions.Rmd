@@ -260,6 +260,34 @@ print(prob_new_student <- Sigmoid(t(new_student) %*% parameters))
 ```
 Is he out? :-(
 
+Now, We're gonna to try other option
+
+```{r, echo = FALSE}
+if (!require("gradDescent")) install.packages("gradDescent")
+# load
+library("gradDescent")
+```
+
+New Gradient Descent version
+
+```{r}
+# We want to minimize the cost function. Then derivate this funcion
+TestGradientDescent2 <- function(iterations = 1200, learning_rate = 0.25, the_data) {
+  
+  # label in the last column in dataSet
+  model <- gradDescentR.learn(dataSet = the_data, featureScaling = TRUE, scalingMethod = "VARIANCE", 
+                              learningMethod = "GD", control = list(alpha = learning_rate, maxIter = iterations), 
+                              seed = 1234)
+  
+  model
+}
+
+# How to use
+TestGradientDescent2(the_data = data)
+
+# Now, the exercises. Use training and test set, change the value of alpha...
+```
+
 ## Plus lesson - Unit test - Testing our code
 
 Unit tests are small functions that test your code and help you make sure everything is alright. To do this in R, the *testthat* package can be used as follows:
