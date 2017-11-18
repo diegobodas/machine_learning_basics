@@ -262,7 +262,7 @@ Is he out? :-(
 
 Now, We're gonna to try other option
 
-```{r, echo = FALSE}
+```{r}
 if (!require("gradDescent")) install.packages("gradDescent")
 # load
 library("gradDescent")
@@ -292,7 +292,7 @@ TestGradientDescent2(the_data = data)
 
 Unit tests are small functions that test your code and help you make sure everything is alright. To do this in R, the *testthat* package can be used as follows:
 
-```{r, echo = FALSE}
+```{r}
 # Install if not installed
 if (!require("testthat")) install.packages("testthat")
 # load
