@@ -155,8 +155,6 @@ $b = b - \alpha\frac{\partial\ell(y, \hat{y})}{\partial b}$
     
 *end algorithm*
 
-Then, the $\frac{1}{n}$ constant dissapear. 
-
 -----
 
 NOTE (trick for the derivatives, using the chain rule): 
